@@ -7,10 +7,14 @@
 
 import UIKit
 
-class ViewController: UIViewController {
+class CharacterViewController: UIViewController {
     
     
-    @IBOutlet weak var tableView: UITableView!
+    @IBOutlet weak var tableView: UITableView! {
+        didSet {
+            tableView.register(UINib(nibName: "CharacterCustomTableViewCell", bundle: nil), forCellReuseIdentifier: "cell")
+        }
+    }
     @IBOutlet weak var numberPageLabel: UILabel!
     
     var numberPage: Int = 1
@@ -61,22 +65,37 @@ class ViewController: UIViewController {
     }
 }
 
-extension ViewController: UITableViewDataSource{
+extension CharacterViewController: UITableViewDataSource{
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return characters?.count ?? 0
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = UITableViewCell(style: .subtitle, reuseIdentifier: "cell")
+        let cell = tableView.dequeueReusableCell(withIdentifier: "cell") as? CharacterCustomTableViewCell
         
-        cell.textLabel?.text = characters?[indexPath.row].name
-        cell.detailTextLabel?.text = characters?[indexPath.row].species
+        cell?.characterNameLabel.text = "Name: " + (characters?[indexPath.row].name ?? "")
+        cell?.characterStatusLabel.text = "Status: " + (characters?[indexPath.row].status ?? "")
+        cell?.characterSpeciesLabel.text = "Specie: " + (characters?[indexPath.row].species ?? "")
+        cell?.characterGenderLabel.text = "Gender: " + (characters?[indexPath.row].gender ?? "")
         
-        return cell
+        // Image
+        if let urlString = characters?[indexPath.row].image as? String {
+            if let imageURL = URL(string: urlString) {
+                DispatchQueue.global().async {
+                    guard let imageData = try? Data(contentsOf: imageURL) else { return }
+                    let image = UIImage(data: imageData)
+                    DispatchQueue.main.async {
+                        cell?.characterImage.image = image
+                    }
+                }
+            }
+        }
+        
+        return cell!
     }
 }
 
-extension ViewController: UITableViewDelegate {
+extension CharacterViewController: UITableViewDelegate {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
     }
