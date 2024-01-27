@@ -9,13 +9,11 @@ import UIKit
 
 class CharacterViewController: UIViewController {
     
-    
     @IBOutlet weak var tableView: UITableView! {
         didSet {
             tableView.register(UINib(nibName: "CharacterCustomTableViewCell", bundle: nil), forCellReuseIdentifier: "cell")
         }
     }
-    @IBOutlet weak var numberPageLabel: UILabel!
     
     var numberPage: Int = 1
     
@@ -27,11 +25,13 @@ class CharacterViewController: UIViewController {
         }
     }
     
+    var isLoadingData = false
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         tableView.dataSource = self
         tableView.delegate = self
-        numberPageLabel.text = "Page: \(numberPage)"
+        tableView.prefetchDataSource = self
         restClient.show("/api/character",page: "1") { response in
             //print(response.results)
             self.characters = response.results
@@ -39,29 +39,20 @@ class CharacterViewController: UIViewController {
        
     }
     
-    
-    @IBAction func backPageButtonAction(_ sender: UIButton) {
-        numberPage -= 1
-        if numberPage == 0{
-            numberPage = 1
+    func loadMoreData() {
+        guard !isLoadingData else {
+            return
         }
-        let page = String(numberPage)
+
+        isLoadingData = true
+        let nextPage = numberPage + 1
+        let page = String(nextPage)
         restClient.show("/api/character", page: page) { response in
-            self.characters = response.results
+            self.characters?.append(contentsOf: response.results)
+            self.tableView.reloadData()
+            self.numberPage = nextPage
+            self.isLoadingData = false
         }
-        numberPageLabel.text = "Page: \(numberPage)"
-    }
-    
-    @IBAction func nextPageButtonAction(_ sender: UIButton) {
-        numberPage += 1
-        if numberPage > 42 {
-            numberPage = 1
-        }
-        let page = String(numberPage)
-        restClient.show("/api/character", page: page) { response in
-            self.characters = response.results
-        }
-        numberPageLabel.text = "Page: \(numberPage)"
     }
 }
 
@@ -98,6 +89,12 @@ extension CharacterViewController: UITableViewDataSource{
 extension CharacterViewController: UITableViewDelegate {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
+    }
+}
+
+extension CharacterViewController: UITableViewDataSourcePrefetching {
+    func tableView(_ tableView: UITableView, prefetchRowsAt indexPaths: [IndexPath]) {
+        loadMoreData()
     }
 }
 
