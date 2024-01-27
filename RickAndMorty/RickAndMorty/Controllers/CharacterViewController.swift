@@ -94,7 +94,17 @@ extension CharacterViewController: UITableViewDelegate {
 
 extension CharacterViewController: UITableViewDataSourcePrefetching {
     func tableView(_ tableView: UITableView, prefetchRowsAt indexPaths: [IndexPath]) {
-        loadMoreData()
+        guard let lastIndexPath = indexPaths.last else {
+            return
+        }
+
+        let lastIndex = lastIndexPath.row
+        let totalRows = tableView.numberOfRows(inSection: 0)
+
+        // Verifica si el último índice prefetch coincide con el último índice de la tabla
+        if lastIndex == totalRows - 1 {
+            loadMoreData()
+        }
     }
 }
 
